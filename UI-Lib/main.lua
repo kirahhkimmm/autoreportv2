@@ -14,14 +14,15 @@ local Library = nil
 
 -- Default theme
 local Theme = {
-    Accent = Color3.fromRGB(0, 162, 255),
-    BackgroundPrimary = Color3.fromRGB(25, 25, 35),
-    BackgroundSecondary = Color3.fromRGB(35, 35, 45),
-    BackgroundTertiary = Color3.fromRGB(45, 45, 55),
-    TextPrimary = Color3.fromRGB(255, 255, 255),
-    TextSecondary = Color3.fromRGB(200, 200, 200),
-    Border = Color3.fromRGB(60, 60, 70),
-    Stroke = Color3.fromRGB(0, 162, 255),
+    -- Hacker aesthetic: neon green on darker backgrounds
+    Accent = Color3.fromRGB(0, 255, 128),
+    BackgroundPrimary = Color3.fromRGB(8, 8, 10),
+    BackgroundSecondary = Color3.fromRGB(12, 18, 12),
+    BackgroundTertiary = Color3.fromRGB(15, 20, 15),
+    TextPrimary = Color3.fromRGB(144, 255, 170),
+    TextSecondary = Color3.fromRGB(80, 180, 110),
+    Border = Color3.fromRGB(0, 200, 100),
+    Stroke = Color3.fromRGB(0, 255, 128),
     Success = Color3.fromRGB(0, 200, 100),
     Error = Color3.fromRGB(255, 85, 85),
     Warning = Color3.fromRGB(255, 180, 0)
@@ -66,13 +67,11 @@ function AbyssUI:CreateWindow(options)
     Window.ClipsDescendants = true
     Window.Parent = Library
     
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 12)
-    Corner.Parent = Window
+    -- removed UICorner for hacker/flat aesthetic
     
     local Stroke = Instance.new("UIStroke")
-    Stroke.Color = self.Theme.Border
-    Stroke.Thickness = 1
+    Stroke.Color = self.Theme.Accent
+    Stroke.Thickness = 1.5
     Stroke.Parent = Window
     
     -- Header
@@ -84,13 +83,11 @@ function AbyssUI:CreateWindow(options)
     Header.BorderSizePixel = 0
     Header.Parent = Window
     
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 12)
-    HeaderCorner.Parent = Header
+    -- removed UICorner for hacker/flat aesthetic
     
     local HeaderStroke = Instance.new("UIStroke")
     HeaderStroke.Color = self.Theme.Accent
-    HeaderStroke.Thickness = 1.5
+    HeaderStroke.Thickness = 2
     HeaderStroke.Parent = Header
     
     local Title = Instance.new("TextLabel")
@@ -104,23 +101,28 @@ function AbyssUI:CreateWindow(options)
     Title.Font = Enum.Font.GothamBold
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = Header
+    Title.TextStrokeColor3 = self.Theme.Accent
+    Title.TextStrokeTransparency = 0.7
     
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseButton"
     CloseButton.Size = UDim2.new(0, 30, 0, 30)
     CloseButton.Position = UDim2.new(1, -40, 0.5, -15)
     CloseButton.AnchorPoint = Vector2.new(0.5, 0.5)
-    CloseButton.BackgroundColor3 = self.Theme.Error
+    -- make close button match hacker look: dark with neon accent
+    CloseButton.BackgroundColor3 = self.Theme.BackgroundPrimary
     CloseButton.BorderSizePixel = 0
-    CloseButton.Text = "×"
-    CloseButton.TextColor3 = Color3.new(1,1,1)
+    CloseButton.Text = "X"
+    CloseButton.TextColor3 = self.Theme.Accent
     CloseButton.TextSize = 18
     CloseButton.Font = Enum.Font.GothamBold
     CloseButton.Parent = Header
     
-    local CloseCorner = Instance.new("UICorner")
-    CloseCorner.CornerRadius = UDim.new(0, 6)
-    CloseCorner.Parent = CloseButton
+    -- removed UICorner for hacker/flat aesthetic
+    local CloseStroke = Instance.new("UIStroke")
+    CloseStroke.Color = self.Theme.Accent
+    CloseStroke.Thickness = 1
+    CloseStroke.Parent = CloseButton
     
     -- Content Frame
     local Content = Instance.new("ScrollingFrame")
@@ -196,9 +198,7 @@ function AbyssUI:CreateTab(windowData, options)
     TabButton.Font = Enum.Font.GothamSemibold
     TabButton.Parent = windowData.Header
     
-    local TabButtonCorner = Instance.new("UICorner")
-    TabButtonCorner.CornerRadius = UDim.new(0, 8)
-    TabButtonCorner.Parent = TabButton
+    -- removed UICorner for hacker/flat aesthetic
     
     local TabButtonStroke = Instance.new("UIStroke")
     TabButtonStroke.Color = self.Theme.Border
@@ -309,9 +309,7 @@ function AbyssUI:CreateSection(tabData, options)
     SectionFrame.BorderSizePixel = 0
     SectionFrame.Parent = tabData.Content
     
-    local SectionCorner = Instance.new("UICorner")
-    SectionCorner.CornerRadius = UDim.new(0, 8)
-    SectionCorner.Parent = SectionFrame
+    -- removed UICorner for hacker/flat aesthetic
     
     local SectionStroke = Instance.new("UIStroke")
     SectionStroke.Color = self.Theme.Border
@@ -392,9 +390,7 @@ function AbyssUI:CreateButtonInContainer(containerData, options)
     Button.Font = Enum.Font.GothamSemibold
     Button.Parent = containerData.Content
     
-    local ButtonCorner = Instance.new("UICorner")
-    ButtonCorner.CornerRadius = UDim.new(0, 8)
-    ButtonCorner.Parent = Button
+    -- removed UICorner for hacker/flat aesthetic
     
     local ButtonStroke = Instance.new("UIStroke")
     ButtonStroke.Color = self.Theme.Border
@@ -464,9 +460,7 @@ function AbyssUI:CreateToggleInContainer(containerData, options)
     ToggleFrame.BorderSizePixel = 0
     ToggleFrame.Parent = containerData.Content
     
-    local ToggleCorner = Instance.new("UICorner")
-    ToggleCorner.CornerRadius = UDim.new(0, 8)
-    ToggleCorner.Parent = ToggleFrame
+    -- removed UICorner for hacker/flat aesthetic
     
     local ToggleStroke = Instance.new("UIStroke")
     ToggleStroke.Color = self.Theme.Border
@@ -495,9 +489,7 @@ function AbyssUI:CreateToggleInContainer(containerData, options)
     ToggleButton.Text = ""
     ToggleButton.Parent = ToggleFrame
     
-    local ToggleButtonCorner = Instance.new("UICorner")
-    ToggleButtonCorner.CornerRadius = UDim.new(0, 8)
-    ToggleButtonCorner.Parent = ToggleButton
+    -- removed UICorner for hacker/flat aesthetic
     
     local ToggleIndicator = Instance.new("Frame")
     ToggleIndicator.Name = "Indicator"
@@ -508,9 +500,7 @@ function AbyssUI:CreateToggleInContainer(containerData, options)
     ToggleIndicator.BorderSizePixel = 0
     ToggleIndicator.Parent = ToggleButton
     
-    local ToggleIndicatorCorner = Instance.new("UICorner")
-    ToggleIndicatorCorner.CornerRadius = UDim.new(0, 5.5)
-    ToggleIndicatorCorner.Parent = ToggleIndicator
+    -- removed UICorner for hacker/flat aesthetic
     
     local state = default
     
@@ -578,9 +568,7 @@ function AbyssUI:CreateSliderInContainer(containerData, options)
     SliderFrame.BorderSizePixel = 0
     SliderFrame.Parent = containerData.Content
     
-    local SliderCorner = Instance.new("UICorner")
-    SliderCorner.CornerRadius = UDim.new(0, 8)
-    SliderCorner.Parent = SliderFrame
+    -- removed UICorner for hacker/flat aesthetic
     
     local SliderStroke = Instance.new("UIStroke")
     SliderStroke.Color = self.Theme.Border
@@ -607,9 +595,7 @@ function AbyssUI:CreateSliderInContainer(containerData, options)
     SliderBar.BorderSizePixel = 0
     SliderBar.Parent = SliderFrame
     
-    local SliderBarCorner = Instance.new("UICorner")
-    SliderBarCorner.CornerRadius = UDim.new(0, 3)
-    SliderBarCorner.Parent = SliderBar
+    -- removed UICorner for hacker/flat aesthetic
     
     local SliderFill = Instance.new("Frame")
     SliderFill.Name = "Fill"
@@ -619,9 +605,7 @@ function AbyssUI:CreateSliderInContainer(containerData, options)
     SliderFill.BorderSizePixel = 0
     SliderFill.Parent = SliderBar
     
-    local SliderFillCorner = Instance.new("UICorner")
-    SliderFillCorner.CornerRadius = UDim.new(0, 3)
-    SliderFillCorner.Parent = SliderFill
+    -- removed UICorner for hacker/flat aesthetic
     
     local dragging = false
     local currentValue = default
@@ -691,9 +675,7 @@ function AbyssUI:CreateTextboxInContainer(containerData, options)
     TextboxFrame.BorderSizePixel = 0
     TextboxFrame.Parent = containerData.Content
     
-    local TextboxCorner = Instance.new("UICorner")
-    TextboxCorner.CornerRadius = UDim.new(0, 8)
-    TextboxCorner.Parent = TextboxFrame
+    -- removed UICorner for hacker/flat aesthetic
     
     local TextboxStroke = Instance.new("UIStroke")
     TextboxStroke.Color = self.Theme.Border
@@ -730,9 +712,7 @@ function AbyssUI:CreateTextboxInContainer(containerData, options)
     TextboxInput.ClearTextOnFocus = false
     TextboxInput.Parent = TextboxFrame
     
-    local TextboxInputCorner = Instance.new("UICorner")
-    TextboxInputCorner.CornerRadius = UDim.new(0, 6)
-    TextboxInputCorner.Parent = TextboxInput
+    -- removed UICorner for hacker/flat aesthetic
     
     TextboxInput.FocusLost:Connect(function(enterPressed)
         callback(TextboxInput.Text)
@@ -768,9 +748,7 @@ function AbyssUI:CreateDropdown(tabData, options)
     DropdownFrame.BorderSizePixel = 0
     DropdownFrame.Parent = tabData.Content
     
-    local DropdownCorner = Instance.new("UICorner")
-    DropdownCorner.CornerRadius = UDim.new(0, 8)
-    DropdownCorner.Parent = DropdownFrame
+    -- removed UICorner for hacker/flat aesthetic
     
     local DropdownStroke = Instance.new("UIStroke")
     DropdownStroke.Color = self.Theme.Border
@@ -801,9 +779,7 @@ function AbyssUI:CreateDropdown(tabData, options)
     DropdownButton.Font = Enum.Font.Gotham
     DropdownButton.Parent = DropdownFrame
     
-    local DropdownButtonCorner = Instance.new("UICorner")
-    DropdownButtonCorner.CornerRadius = UDim.new(0, 6)
-    DropdownButtonCorner.Parent = DropdownButton
+    -- removed UICorner for hacker/flat aesthetic
     
     local DropdownList = Instance.new("Frame")
     DropdownList.Name = "List"
@@ -814,9 +790,7 @@ function AbyssUI:CreateDropdown(tabData, options)
     DropdownList.Visible = false
     DropdownList.Parent = DropdownFrame
     
-    local DropdownListCorner = Instance.new("UICorner")
-    DropdownListCorner.CornerRadius = UDim.new(0, 8)
-    DropdownListCorner.Parent = DropdownList
+    -- removed UICorner for hacker/flat aesthetic
     
     local DropdownListStroke = Instance.new("UIStroke")
     DropdownListStroke.Color = self.Theme.Border
@@ -897,9 +871,7 @@ function AbyssUI:CreateColorPicker(tabData, options)
     ColorPickerFrame.BorderSizePixel = 0
     ColorPickerFrame.Parent = tabData.Content
     
-    local ColorPickerCorner = Instance.new("UICorner")
-    ColorPickerCorner.CornerRadius = UDim.new(0, 8)
-    ColorPickerCorner.Parent = ColorPickerFrame
+    -- removed UICorner for hacker/flat aesthetic
     
     local ColorPreview = Instance.new("Frame")
     ColorPreview.Name = "Preview"
@@ -910,9 +882,7 @@ function AbyssUI:CreateColorPicker(tabData, options)
     ColorPreview.BorderSizePixel = 0
     ColorPreview.Parent = ColorPickerFrame
     
-    local ColorPreviewCorner = Instance.new("UICorner")
-    ColorPreviewCorner.CornerRadius = UDim.new(0, 5)
-    ColorPreviewCorner.Parent = ColorPreview
+    -- removed UICorner for hacker/flat aesthetic
     
     local ColorLabel = Instance.new("TextLabel")
     ColorLabel.Name = "Label"
@@ -1005,9 +975,7 @@ function AbyssUI:Notify(options)
     Notification.BorderSizePixel = 0
     Notification.Parent = ScreenGui
     
-    local NotificationCorner = Instance.new("UICorner")
-    NotificationCorner.CornerRadius = UDim.new(0, 8)
-    NotificationCorner.Parent = Notification
+    -- removed UICorner for hacker/flat aesthetic
     
     local NotificationStroke = Instance.new("UIStroke")
     NotificationStroke.Color = self.Theme.Accent
@@ -1045,6 +1013,25 @@ end
 function AbyssUI:SetTheme(newTheme)
     self.Theme = newTheme
     -- Update all existing elements would go here
+end
+
+-- Enable pre-configured hacker theme
+function AbyssUI:EnableHackerTheme()
+    local HackerTheme = {
+        Accent = Color3.fromRGB(0, 255, 128),
+        BackgroundPrimary = Color3.fromRGB(8, 8, 10),
+        BackgroundSecondary = Color3.fromRGB(12, 18, 12),
+        BackgroundTertiary = Color3.fromRGB(15, 20, 15),
+        TextPrimary = Color3.fromRGB(144, 255, 170),
+        TextSecondary = Color3.fromRGB(80, 180, 110),
+        Border = Color3.fromRGB(0, 200, 100),
+        Stroke = Color3.fromRGB(0, 255, 128),
+        Success = Color3.fromRGB(0, 200, 100),
+        Error = Color3.fromRGB(255, 85, 85),
+        Warning = Color3.fromRGB(255, 180, 0)
+    }
+    self:SetTheme(HackerTheme)
+    return self
 end
 
 return AbyssUI
