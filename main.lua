@@ -59,10 +59,39 @@ local ChatInputBox
 local espData = {}
 
 -- helper to safely run callbacks and surface errors
+-- on-screen error reporter
+local function reportError(err)
+    local tb = tostring(err)
+    local ok, trace = pcall(function() return debug.traceback(err,2) end)
+    local text = (ok and trace) or tb
+    warn("AutoReport ERROR:", text)
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "AutoReportError"
+    sg.ResetOnSpawn = false
+    sg.Parent = game.CoreGui
+    local f = Instance.new("Frame", sg)
+    f.Size = UDim2.new(0, 520, 0, 120)
+    f.Position = UDim2.new(1, -540, 0, 20)
+    f.BackgroundColor3 = Color3.fromRGB(30,30,40)
+    f.BorderSizePixel = 0
+    local lbl = Instance.new("TextLabel", f)
+    lbl.Size = UDim2.new(1, -12, 1, -12)
+    lbl.Position = UDim2.new(0,6,0,6)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.fromRGB(255,120,120)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextYAlignment = Enum.TextYAlignment.Top
+    lbl.RichText = false
+    lbl.Font = Enum.Font.Code
+    lbl.TextWrapped = true
+    lbl.Text = string.sub(text, 1, 2000)
+    game:GetService("Debris"):AddItem(sg, 8)
+end
+
 local function safeCall(fn, ...)
     local ok, err = pcall(fn, ...)
     if not ok then
-        warn("AutoReport callback error:", err)
+        reportError(err)
     end
     return ok, err
 end
@@ -248,6 +277,16 @@ local function buildMainUI()
                     if text and text ~= "" then AddChatMessage(LocalPlayer.Name, text) end
                 end)
             end })
+            -- attach FocusLost for Abyss textbox if present
+            safeCall(function()
+                if type(ChatInputBox) == "table" and ChatInputBox.Input and ChatInputBox.Input.FocusLost then
+                    ChatInputBox.Input.FocusLost:Connect(function(enter)
+                        safeCall(function()
+                            if enter and ChatInputBox.Input.Text ~= "" then AddChatMessage(LocalPlayer.Name, ChatInputBox.Input.Text); ChatInputBox.Input.Text = "" end
+                        end)
+                    end)
+                end
+            end)
 
             macroTab.AddTextbox({ Text = "Macro Key", Default = "F", Callback = function(text)
                 safeCall(function()
@@ -324,6 +363,16 @@ local function buildMainUI()
     ChatInputBox.Font = Enum.Font.Gotham
     ChatInputBox.TextScaled = true
     ChatInputBox.Parent = ChatFrame
+    -- attach fallback TextBox handler
+    safeCall(function()
+        if ChatInputBox and ChatInputBox:IsA("TextBox") then
+            ChatInputBox.FocusLost:Connect(function(enter)
+                safeCall(function()
+                    if enter and ChatInputBox.Text ~= "" then AddChatMessage(LocalPlayer.Name, ChatInputBox.Text); ChatInputBox.Text = "" end
+                end)
+            end)
+        end
+    end)
 end
 
 -- Logo to toggle UI
@@ -341,53 +390,59 @@ if not logo then
 end
 
 logo.MouseButton1Click:Connect(function()
-    if not MainUI or (MainUI and not MainUI.Window) then buildMainUI() else MainUI.Window.Visible = not MainUI.Window.Visible end
+    safeCall(function()
+        if not MainUI or (MainUI and not MainUI.Window) then buildMainUI() else MainUI.Window.Visible = not MainUI.Window.Visible end
+    end)
 end)
 
--- Hook chat input for fallback textbox
-if ChatInputBox and ChatInputBox:IsA("TextBox") then
-    ChatInputBox.FocusLost:Connect(function(enter)
-        if enter and ChatInputBox.Text ~= "" then AddChatMessage(LocalPlayer.Name, ChatInputBox.Text); ChatInputBox.Text = "" end
-    end)
-end
+-- (Chat input handlers are attached inside buildMainUI after textbox creation)
 
 -- Keybind handling
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == state.macroKeybind then ExecuteMacro() end
-    -- Insert toggles the UI (acts as close/open)
-    if input.KeyCode == Enum.KeyCode.Insert then
-        if MainUI and MainUI.Window and MainUI.Window.Parent then
-            MainUI.Window.Visible = not MainUI.Window.Visible
-        else
-            if ChatFrame then ChatFrame.Visible = not ChatFrame.Visible end
+    safeCall(function()
+        if gameProcessed then return end
+        if input.KeyCode == state.macroKeybind then ExecuteMacro() end
+        -- Insert toggles the UI (acts as close/open)
+        if input.KeyCode == Enum.KeyCode.Insert then
+            if MainUI and MainUI.Window and MainUI.Window.Parent then
+                MainUI.Window.Visible = not MainUI.Window.Visible
+            else
+                if ChatFrame then ChatFrame.Visible = not ChatFrame.Visible end
+            end
+            return
         end
-        return
-    end
+    end, input, gameProcessed)
 end)
 
 -- Chat hook: auto-report
 Players.PlayerChatted:Connect(function(_, player, message)
-    if not player or player == LocalPlayer then return end
-    local msg = string.lower(tostring(message or ""))
-    if state.autoReportActive then
-        for word, reason in pairs(words) do if string.find(msg, word) then UI:Report(player.Name, reason, false); return end end
-    end
-    if state.reportBackActive then
-        for word in pairs(reportBackWords) do if string.find(msg, word) then UI:Report(player.Name, "Bullying", true); return end end
-    end
+    safeCall(function()
+        if not player or player == LocalPlayer then return end
+        local msg = string.lower(tostring(message or ""))
+        if state.autoReportActive then
+            for word, reason in pairs(words) do if string.find(msg, word) then UI:Report(player.Name, reason, false); return end end
+        end
+        if state.reportBackActive then
+            for word in pairs(reportBackWords) do if string.find(msg, word) then UI:Report(player.Name, "Bullying", true); return end end
+        end
+    end, _, player, message)
 end)
 
 -- ESP management: track players and characters
 Players.PlayerAdded:Connect(function(pl)
-    pl.CharacterAdded:Connect(function() updateEspForPlayer(pl) end)
+    safeCall(function()
+        pl.CharacterAdded:Connect(function() safeCall(function() updateEspForPlayer(pl) end) end)
+        if pl.Character then safeCall(function() updateEspForPlayer(pl) end) end
+    end)
 end)
 Players.PlayerRemoving:Connect(function(pl)
-    clearEspForPlayer(pl)
+    safeCall(function() clearEspForPlayer(pl) end)
 end)
 for _,pl in ipairs(Players:GetPlayers()) do
-    if pl.Character then updateEspForPlayer(pl) end
-    pl.CharacterAdded:Connect(function() updateEspForPlayer(pl) end)
+    safeCall(function()
+        if pl.Character then updateEspForPlayer(pl) end
+        pl.CharacterAdded:Connect(function() safeCall(function() updateEspForPlayer(pl) end) end)
+    end)
 end
 
 -- Init
