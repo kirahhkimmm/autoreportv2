@@ -7,7 +7,7 @@
 [![Downloads](https://img.shields.io/badge/Downloads-50K%2B-brightgreen?style=for-the-badge&logo=download)](https://raw.githubusercontent.com/kirahhkimmm/autoreportv2/main/autoreport.lua)
 [![Roblox](https://img.shields.io/badge/Roblox-TOS%20Compliant-blueviolet?style=for-the-badge&logo=roblox)](https://en.help.roblox.com/hc/en-us)
 
-original:
+original and inspiration:
 https://github.com/CF-Trail
 
 creator of this:
