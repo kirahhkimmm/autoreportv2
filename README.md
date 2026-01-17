@@ -1,8 +1,4 @@
-markdown
-
-
-
-# 🚨 **AutoReport v2.0** - Ultimate Roblox Chat Protection Script ⚔️
+# auto report
 
 <div align="center">
 
