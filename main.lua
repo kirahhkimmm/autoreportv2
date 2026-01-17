@@ -9,8 +9,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local localPlayerName = LocalPlayer and string.lower(LocalPlayer.Name) or ""
 
+-- Force fallback UI when true (prevents loading/executing remote UI code)
+local FORCE_FALLBACK = true
+
 -- Simple, robust remote loader (uses loadstring(HttpGet) as requested)
 local function loadRemoteUI()
+    if FORCE_FALLBACK then
+        warn("FORCE_FALLBACK is enabled — skipping remote UI load")
+        return nil
+    end
     local ok, res = pcall(function()
         local raw = game:HttpGet("https://raw.githubusercontent.com/kirahhkimmm/autoreportv2/refs/heads/main/UI-Lib/main.lua")
         local fn, err = loadstring(raw)
