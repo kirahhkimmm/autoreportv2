@@ -1,6 +1,3 @@
--- 🚀 AutoReport V3.0 - ULTIMATE CHAT CONTROL SYSTEM (FIXED)
--- Fixed CanvasSize error + Enhanced stability
-
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
