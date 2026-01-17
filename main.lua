@@ -58,6 +58,15 @@ local ChatFrame
 local ChatInputBox
 local espData = {}
 
+-- helper to safely run callbacks and surface errors
+local function safeCall(fn, ...)
+    local ok, err = pcall(fn, ...)
+    if not ok then
+        warn("AutoReport callback error:", err)
+    end
+    return ok, err
+end
+
 local function updateEspForPlayer(player)
     if not player or player == LocalPlayer then return end
     local char = player.Character
@@ -235,46 +244,60 @@ local function buildMainUI()
             chatListLayout.SortOrder = Enum.SortOrder.LayoutOrder; chatListLayout.Padding = UDim.new(0,6)
 
             ChatInputBox = chatTab.AddTextbox({ Text = "Message", Default = "", Callback = function(text)
-                if text and text ~= "" then AddChatMessage(LocalPlayer.Name, text) end
+                safeCall(function()
+                    if text and text ~= "" then AddChatMessage(LocalPlayer.Name, text) end
+                end)
             end })
 
             macroTab.AddTextbox({ Text = "Macro Key", Default = "F", Callback = function(text)
-                local key = string.upper(tostring(text or "")):gsub("%s+","")
-                if key ~= "" and Enum.KeyCode[key] then state.macroKeybind = Enum.KeyCode[key] end
+                safeCall(function()
+                    local key = string.upper(tostring(text or "")):gsub("%s+","")
+                    if key ~= "" and Enum.KeyCode[key] then state.macroKeybind = Enum.KeyCode[key] end
+                end)
             end })
 
             for _, t in ipairs(toggles) do
                 togglesSection.AddToggle({ Text = t.label, Default = t.enabled, Callback = function(val)
-                    t.enabled = val
-                    if t.label:find("Universal Chat") then state.universalChatActive = val; if ChatFrame then ChatFrame.Visible = val end
-                    elseif t.label:find("Macro") then state.macroEnabled = val
-                    elseif t.label:find("AutoReport") then state.autoReportActive = val
-                    elseif t.label:find("Report-Back") then state.reportBackActive = val end
+                    safeCall(function()
+                        t.enabled = val
+                        if t.label:find("Universal Chat") then state.universalChatActive = val; if ChatFrame then ChatFrame.Visible = val end
+                        elseif t.label:find("Macro") then state.macroEnabled = val
+                        elseif t.label:find("AutoReport") then state.autoReportActive = val
+                        elseif t.label:find("Report-Back") then state.reportBackActive = val end
+                    end)
                 end })
             end
 
             -- Universal tab: simple controls (in a section so they display)
             universalSection.AddButton({ Text = "Clear Chat", Callback = function()
-                if ChatFrame and ChatFrame:IsA("ScrollingFrame") then
-                    for _,c in ipairs(ChatFrame:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
-                    universalChatMessages = {}
-                    UI:Notify("🧹 Universal", "Cleared chat", 2)
-                end
+                safeCall(function()
+                    if ChatFrame and ChatFrame:IsA("ScrollingFrame") then
+                        for _,c in ipairs(ChatFrame:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
+                        universalChatMessages = {}
+                        UI:Notify("🧹 Universal", "Cleared chat", 2)
+                    end
+                end)
             end })
 
             universalSection.AddToggle({ Text = "Show System Messages", Default = true, Callback = function(val)
-                -- placeholder: user can implement behavior
-                UI:Notify("⚙️ Universal", "Show System Messages: "..tostring(val), 2)
+                safeCall(function()
+                    -- placeholder: user can implement behavior
+                    UI:Notify("⚙️ Universal", "Show System Messages: "..tostring(val), 2)
+                end)
             end })
 
             -- ESP tab: skeletons and 3D boxes (put controls into the ESP section)
             espSection.AddToggle({ Text = "Skeletons", Default = state.espSkeleton, Callback = function(val)
-                state.espSkeleton = val
-                for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
+                safeCall(function()
+                    state.espSkeleton = val
+                    for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
+                end)
             end })
             espSection.AddToggle({ Text = "3D Boxes", Default = state.espBox, Callback = function(val)
-                state.espBox = val
-                for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
+                safeCall(function()
+                    state.espBox = val
+                    for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
+                end)
             end })
         end)
         return
