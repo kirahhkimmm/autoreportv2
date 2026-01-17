@@ -1,3 +1,6 @@
+-- 🚀 AutoReport V3.0 - ULTIMATE CHAT CONTROL SYSTEM (FIXED)
+-- Fixed CanvasSize error + Enhanced stability
+
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
@@ -62,7 +65,7 @@ UIPadding.PaddingRight = UDim.new(0, 10)
 UIPadding.Parent = ChatFrame
 
 -- Logo (Bottom Right)
-local Logo = Instance.new("ImageLabel")
+local Logo = Instance.new("ImageButton")
 Logo.Name = "Logo"
 Logo.Size = UDim2.new(0, 100, 0, 100)
 Logo.Position = UDim2.new(1, -120, 1, -120)
@@ -71,6 +74,7 @@ Logo.Image = "https://raw.githubusercontent.com/kirahhkimmm/autoreportv2/main/im
 Logo.Parent = ScreenGui
 Logo.ImageTransparency = 0.2
 Logo.ZIndex = 1000
+Logo.AutoButtonColor = false
 
 -- Main Menu Frame
 local MainFrame = Instance.new("Frame")
