@@ -220,6 +220,8 @@ local function buildMainUI()
             local togglesSection = mainTab.AddSection({ Name = "Toggles" })
             local universalTab = MainUI.CreateTab({ Name = "Universal" })
             local espTab = MainUI.CreateTab({ Name = "ESP" })
+            local universalSection = universalTab.AddSection({ Name = "Universal Options" })
+            local espSection = espTab.AddSection({ Name = "ESP Options" })
 
             -- Chat area
             ChatFrame = Instance.new("ScrollingFrame")
@@ -251,8 +253,8 @@ local function buildMainUI()
                 end })
             end
 
-            -- Universal tab: simple controls
-            universalTab.AddButton({ Text = "Clear Chat", Callback = function()
+            -- Universal tab: simple controls (in a section so they display)
+            universalSection.AddButton({ Text = "Clear Chat", Callback = function()
                 if ChatFrame and ChatFrame:IsA("ScrollingFrame") then
                     for _,c in ipairs(ChatFrame:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
                     universalChatMessages = {}
@@ -260,17 +262,17 @@ local function buildMainUI()
                 end
             end })
 
-            universalTab.AddToggle({ Text = "Show System Messages", Default = true, Callback = function(val)
+            universalSection.AddToggle({ Text = "Show System Messages", Default = true, Callback = function(val)
                 -- placeholder: user can implement behavior
                 UI:Notify("⚙️ Universal", "Show System Messages: "..tostring(val), 2)
             end })
 
-            -- ESP tab: skeletons and 3D boxes
-            espTab.AddToggle({ Text = "Skeletons", Default = state.espSkeleton, Callback = function(val)
+            -- ESP tab: skeletons and 3D boxes (put controls into the ESP section)
+            espSection.AddToggle({ Text = "Skeletons", Default = state.espSkeleton, Callback = function(val)
                 state.espSkeleton = val
                 for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
             end })
-            espTab.AddToggle({ Text = "3D Boxes", Default = state.espBox, Callback = function(val)
+            espSection.AddToggle({ Text = "3D Boxes", Default = state.espBox, Callback = function(val)
                 state.espBox = val
                 for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
             end })
