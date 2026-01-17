@@ -42,7 +42,9 @@ local state = {
     macroEnabled = false,
     universalChatActive = true,
     autoReportActive = true,
-    reportBackActive = true
+    reportBackActive = true,
+    espSkeleton = false,
+    espBox = false
 }
 
 local universalChatMessages = {}
@@ -54,6 +56,66 @@ local reportBackWords = { ['report'] = 'Bullying' }
 
 local ChatFrame
 local ChatInputBox
+local espData = {}
+
+local function updateEspForPlayer(player)
+    if not player or player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    local data = espData[player] or {}
+    espData[player] = data
+
+    -- Skeleton (using Highlight outline)
+    if state.espSkeleton then
+        if not data.skel then
+            local ok, h = pcall(function()
+                local hl = Instance.new("Highlight")
+                hl.Name = "AutoReportESP_Highlight"
+                hl.FillTransparency = 1
+                hl.OutlineTransparency = 0
+                hl.FillColor = Color3.fromRGB(255,0,0)
+                hl.OutlineColor = Color3.fromRGB(255,0,0)
+                hl.Adornee = char
+                hl.Parent = workspace
+                return hl
+            end)
+            if ok then data.skel = h end
+        end
+    else
+        if data.skel then pcall(function() data.skel:Destroy() end); data.skel = nil end
+    end
+
+    -- 3D box (BoxHandleAdornment)
+    if state.espBox then
+        if not data.box then
+            local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+            if hrp then
+                local ok, box = pcall(function()
+                    local b = Instance.new("BoxHandleAdornment")
+                    b.Name = "AutoReportESP_Box"
+                    b.Adornee = hrp
+                    b.Color3 = Color3.fromRGB(255,0,0)
+                    b.Size = Vector3.new(2, 5, 1)
+                    b.AlwaysOnTop = true
+                    b.ZIndex = 10
+                    b.Parent = hrp
+                    return b
+                end)
+                if ok then data.box = box end
+            end
+        end
+    else
+        if data.box then pcall(function() data.box:Destroy() end); data.box = nil end
+    end
+end
+
+local function clearEspForPlayer(player)
+    local data = espData[player]
+    if not data then return end
+    if data.skel then pcall(function() data.skel:Destroy() end) end
+    if data.box then pcall(function() data.box:Destroy() end) end
+    espData[player] = nil
+end
 
 function UI:Notify(title, desc, duration)
     duration = duration or 4
@@ -139,10 +201,25 @@ local function buildMainUI()
             if prev then prev:Destroy() end
             Abyss:Init()
             MainUI = Abyss:CreateWindow({ Name = "AutoReport", Size = UDim2.new(0,420,0,380) })
+            -- remove/disable any built-in close button ("X") to use Insert key instead
+            pcall(function()
+                if MainUI and MainUI.Window then
+                    for _,d in ipairs(MainUI.Window:GetDescendants()) do
+                        if d:IsA("TextButton") then
+                            local t = tostring(d.Text or "")
+                            if t == "X" or t == "x" or (d.Name and string.find(string.lower(d.Name), "close")) then
+                                d.Visible = false
+                            end
+                        end
+                    end
+                end
+            end)
             local mainTab = MainUI.CreateTab({ Name = "Main" })
             local chatTab = MainUI.CreateTab({ Name = "Chat" })
             local macroTab = MainUI.CreateTab({ Name = "Macro" })
             local togglesSection = mainTab.AddSection({ Name = "Toggles" })
+            local universalTab = MainUI.CreateTab({ Name = "Universal" })
+            local espTab = MainUI.CreateTab({ Name = "ESP" })
 
             -- Chat area
             ChatFrame = Instance.new("ScrollingFrame")
@@ -173,6 +250,30 @@ local function buildMainUI()
                     elseif t.label:find("Report-Back") then state.reportBackActive = val end
                 end })
             end
+
+            -- Universal tab: simple controls
+            universalTab.AddButton({ Text = "Clear Chat", Callback = function()
+                if ChatFrame and ChatFrame:IsA("ScrollingFrame") then
+                    for _,c in ipairs(ChatFrame:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
+                    universalChatMessages = {}
+                    UI:Notify("🧹 Universal", "Cleared chat", 2)
+                end
+            end })
+
+            universalTab.AddToggle({ Text = "Show System Messages", Default = true, Callback = function(val)
+                -- placeholder: user can implement behavior
+                UI:Notify("⚙️ Universal", "Show System Messages: "..tostring(val), 2)
+            end })
+
+            -- ESP tab: skeletons and 3D boxes
+            espTab.AddToggle({ Text = "Skeletons", Default = state.espSkeleton, Callback = function(val)
+                state.espSkeleton = val
+                for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
+            end })
+            espTab.AddToggle({ Text = "3D Boxes", Default = state.espBox, Callback = function(val)
+                state.espBox = val
+                for _,pl in ipairs(Players:GetPlayers()) do updateEspForPlayer(pl) end
+            end })
         end)
         return
     end
@@ -181,8 +282,8 @@ local function buildMainUI()
     if ChatFrame and ChatFrame.Parent then ChatFrame:Destroy() end
     ChatFrame = Instance.new("ScrollingFrame")
     ChatFrame.Name = "UniversalChat"
-    ChatFrame.Size = UDim2.new(0,360,1,-120)
-    ChatFrame.Position = UDim2.new(1,-420,0,60)
+    ChatFrame.Size = UDim2.new(0,360,0,240)
+    ChatFrame.Position = UDim2.new(1,-400,1,-300)
     ChatFrame.BackgroundColor3 = Color3.fromRGB(12,14,20)
     ChatFrame.BorderSizePixel = 0
     ChatFrame.ScrollBarThickness = 6
@@ -229,6 +330,15 @@ end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.KeyCode == state.macroKeybind then ExecuteMacro() end
+    -- Insert toggles the UI (acts as close/open)
+    if input.KeyCode == Enum.KeyCode.Insert then
+        if MainUI and MainUI.Window and MainUI.Window.Parent then
+            MainUI.Window.Visible = not MainUI.Window.Visible
+        else
+            if ChatFrame then ChatFrame.Visible = not ChatFrame.Visible end
+        end
+        return
+    end
 end)
 
 -- Chat hook: auto-report
@@ -242,6 +352,18 @@ Players.PlayerChatted:Connect(function(_, player, message)
         for word in pairs(reportBackWords) do if string.find(msg, word) then UI:Report(player.Name, "Bullying", true); return end end
     end
 end)
+
+-- ESP management: track players and characters
+Players.PlayerAdded:Connect(function(pl)
+    pl.CharacterAdded:Connect(function() updateEspForPlayer(pl) end)
+end)
+Players.PlayerRemoving:Connect(function(pl)
+    clearEspForPlayer(pl)
+end)
+for _,pl in ipairs(Players:GetPlayers()) do
+    if pl.Character then updateEspForPlayer(pl) end
+    pl.CharacterAdded:Connect(function() updateEspForPlayer(pl) end)
+end
 
 -- Init
 task.defer(function()
