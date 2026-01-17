@@ -1,3 +1,204 @@
+-- AutoReport V3.1 - Clean restart using remote Abyss UI
+repeat task.wait() until game:IsLoaded()
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local localPlayerName = string.lower(LocalPlayer.Name)
+
+-- Load remote UI library (forced to use loadstring/HttpGet per user)
+local function loadRemoteUI()
+    local ok, mod = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/kirahhkimmm/autoreportv2/refs/heads/main/UI-Lib/main.lua"))()
+    end)
+    if not ok then
+        warn("Failed to load remote UI module:", mod)
+        return nil
+    end
+    return mod
+end
+
+local Abyss = loadRemoteUI()
+
+-- UI wrapper for notify/report
+local UI = {}
+
+-- State and data
+local toggles = {
+    { label = "🔍 AutoReport", enabled = true },
+    { label = "⚔️ Report-Back", enabled = true },
+    { label = "💬 Universal Chat", enabled = true },
+    { label = "🎯 Macro System", enabled = false }
+}
+
+local state = {
+    macroKeybind = Enum.KeyCode.F,
+    macroEnabled = false,
+    universalChatActive = false,
+    autoReportActive = true,
+    reportBackActive = true
+}
+
+local universalChatMessages = {}
+local chatRoles = { [LocalPlayer.Name] = " " }
+
+local words = { ['gay'] = 'Bullying', ['trans'] = 'Bullying' } -- truncated
+local reportBackWords = { ['report'] = 'Bullying' }
+
+local ChatFrame = nil
+
+function UI:Notify(title, desc, duration)
+    duration = duration or 4
+    if Abyss and Abyss.Notify then
+        Abyss:Notify({ Text = (title .. " - " .. desc), Duration = duration })
+        return
+    end
+    -- lightweight fallback (rare; when remote UI fails)
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "AutoReportFallback"
+    sg.Parent = game.CoreGui
+    sg.ResetOnSpawn = false
+    local f = Instance.new("Frame", sg)
+    f.Size = UDim2.new(0,300,0,80)
+    f.Position = UDim2.new(0,20,1,20)
+    f.BackgroundColor3 = Color3.fromRGB(25,25,35)
+    local t = Instance.new("TextLabel", f)
+    t.Size = UDim2.new(1,-20,0,30); t.Position = UDim2.new(0,10,0,10); t.BackgroundTransparency = 1
+    t.Text = title; t.Font = Enum.Font.GothamBold; t.TextScaled = true; t.TextColor3 = Color3.new(1,1,1)
+    local d = Instance.new("TextLabel", f)
+    d.Size = UDim2.new(1,-20,0,30); d.Position = UDim2.new(0,10,0,40); d.BackgroundTransparency = 1
+    d.Text = desc; d.Font = Enum.Font.Gotham; d.TextScaled = true; d.TextColor3 = Color3.fromRGB(200,200,200)
+    TweenService:Create(f, TweenInfo.new(0.5), { Position = UDim2.new(0,20,1,-100) }):Play()
+    game:GetService("Debris"):AddItem(sg, duration)
+end
+
+function UI:Report(playerName, reason, isReportBack)
+    if string.lower(playerName) == localPlayerName then return end
+    pcall(function()
+        Players:ReportAbuse(Players:FindFirstChild(playerName), reason, "breaking TOS")
+    end)
+    if isReportBack then
+        UI:Notify("🔄 REPORT-BACK", "Counter-reported "..playerName, 4)
+    else
+        UI:Notify("🚨 AUTO-REPORT", "Reported "..playerName.." for "..reason, 4)
+    end
+end
+
+function AddChatMessage(playerName, message)
+    if not ChatFrame or not ChatFrame:IsA("ScrollingFrame") then return end
+    local msgFrame = Instance.new("Frame")
+    msgFrame.Size = UDim2.new(1,0,0,40); msgFrame.BackgroundTransparency = 1; msgFrame.LayoutOrder = #universalChatMessages + 1
+    msgFrame.Parent = ChatFrame
+    local roleLabel = Instance.new("TextLabel", msgFrame)
+    roleLabel.Size = UDim2.new(0,60,1,0); roleLabel.BackgroundTransparency = 1; roleLabel.Text = chatRoles[string.lower(playerName)] or "👤"
+    roleLabel.TextColor3 = Color3.fromRGB(100,255,100); roleLabel.Font = Enum.Font.GothamBold; roleLabel.TextScaled = true
+    local nameLabel = Instance.new("TextLabel", msgFrame)
+    nameLabel.Size = UDim2.new(0,100,0.5,0); nameLabel.Position = UDim2.new(0,65,0,0); nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = playerName; nameLabel.TextColor3 = Color3.fromRGB(255,255,255); nameLabel.Font = Enum.Font.GothamSemibold; nameLabel.TextScaled = true; nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    local msgLabel = Instance.new("TextLabel", msgFrame)
+    msgLabel.Size = UDim2.new(1,-170,1,0); msgLabel.Position = UDim2.new(0,165,0,0); msgLabel.BackgroundTransparency = 1
+    msgLabel.Text = message; msgLabel.TextColor3 = Color3.fromRGB(200,200,200); msgLabel.Font = Enum.Font.Gotham; msgLabel.TextScaled = true; msgLabel.TextXAlignment = Enum.TextXAlignment.Left; msgLabel.TextWrapped = true
+    table.insert(universalChatMessages, msgFrame)
+    ChatFrame.CanvasSize = UDim2.new(0,0,0, math.max(200, (#universalChatMessages+1) * 45))
+end
+
+local function buildMainUI()
+    if not Abyss then
+        warn("Abyss UI not available — cannot build full UI. Falling back to minimal chat.")
+        ChatFrame = Instance.new("ScrollingFrame")
+        ChatFrame.Name = "UniversalChat"
+        ChatFrame.Size = UDim2.new(0,360,1,-120)
+        ChatFrame.Position = UDim2.new(1,-420,0,60)
+        ChatFrame.BackgroundColor3 = Color3.fromRGB(12,14,20)
+        ChatFrame.BorderSizePixel = 0
+        ChatFrame.Parent = game.CoreGui
+        local UIListLayout = Instance.new("UIListLayout", ChatFrame)
+        UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder; UIListLayout.Padding = UDim.new(0,6)
+        return
+    end
+
+    -- remove any previous Abyss ScreenGui
+    local core = game:GetService("CoreGui")
+    local prev = core:FindFirstChild("AbyssUI")
+    if prev then prev:Destroy() end
+
+    Abyss:Init()
+    local win = Abyss:CreateWindow({ Name = "AutoReport", Size = UDim2.new(0,420,0,380) })
+    MainUI = win
+    local mainTab = win.CreateTab({ Name = "Main" })
+    local chatTab = win.CreateTab({ Name = "Chat" })
+    local macroTab = win.CreateTab({ Name = "Macro" })
+
+    local togglesSection = mainTab.AddSection({ Name = "Toggles" })
+
+    -- chat
+    ChatFrame = Instance.new("ScrollingFrame")
+    ChatFrame.Name = "UniversalChat"
+    ChatFrame.Size = UDim2.new(1,0,0,200)
+    ChatFrame.BackgroundTransparency = 1
+    ChatFrame.BorderSizePixel = 0
+    ChatFrame.Parent = chatTab.Content
+    local chatListLayout = Instance.new("UIListLayout", ChatFrame)
+    chatListLayout.SortOrder = Enum.SortOrder.LayoutOrder; chatListLayout.Padding = UDim.new(0,6)
+
+    ChatInputBox = chatTab.AddTextbox({ Text = "Message", Default = "", Callback = function(text)
+        if text and text ~= "" then AddChatMessage(LocalPlayer.Name, text) end
+    end })
+
+    macroTab.AddTextbox({ Text = "Macro Key", Default = "F", Callback = function(text)
+        local key = string.upper(tostring(text or "")):gsub("%s+", "")
+        if key ~= "" and Enum.KeyCode[key] then state.macroKeybind = Enum.KeyCode[key] end
+    end })
+
+    for _, t in ipairs(toggles) do
+        togglesSection.AddToggle({ Text = t.label, Default = t.enabled, Callback = function(val)
+            t.enabled = val
+            if t.label:find("Universal Chat") then state.universalChatActive = val; if ChatFrame then ChatFrame.Visible = val end
+            elseif t.label:find("Macro") then state.macroEnabled = val
+            elseif t.label:find("AutoReport") then state.autoReportActive = val
+            elseif t.label:find("Report-Back") then state.reportBackActive = val end
+        end })
+    end
+end
+
+-- create a single logo button to open UI
+local logo = game.CoreGui:FindFirstChild("AutoReportLogo")
+if not logo then
+    logo = Instance.new("ImageButton")
+    logo.Name = "AutoReportLogo"
+    logo.Size = UDim2.new(0,96,0,96)
+    logo.Position = UDim2.new(1,-116,1,-116)
+    logo.BackgroundTransparency = 1
+    logo.Image = "https://raw.githubusercontent.com/kirahhkimmm/autoreportv2/main/images/logo.png"
+    logo.Parent = game.CoreGui
+    logo.ImageTransparency = 0.15
+    logo.AutoButtonColor = false
+end
+
+logo.MouseButton1Click:Connect(function()
+    if not MainUI or not MainUI.Window or not MainUI.Window.Parent then buildMainUI() else MainUI.Window.Visible = not MainUI.Window.Visible end
+end)
+
+-- keybind handling
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == state.macroKeybind then ExecuteMacro() end
+end)
+
+-- auto-report hook
+Players.PlayerChatted:Connect(function(_, player, message)
+    if player == LocalPlayer then return end
+    local msg = string.lower(message)
+    if state.autoReportActive then for word, reason in pairs(words) do if string.find(msg, word) then UI:Report(player.Name, reason, false); return end end end
+    if state.reportBackActive then for word in pairs(reportBackWords) do if string.find(msg, word) then UI:Report(player.Name, "Bullying", true); return end end end
+end)
+
+-- init
+buildMainUI()
+UI:Notify("✅ AutoReport", "UI restarted with remote Abyss UI.", 4)
+AddChatMessage("System", "Universal Chat ready")
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
