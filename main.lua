@@ -15,7 +15,13 @@ local function loadRemoteUI()
         local raw = game:HttpGet("https://raw.githubusercontent.com/kirahhkimmm/autoreportv2/refs/heads/main/UI-Lib/main.lua")
         local fn, err = loadstring(raw)
         if not fn then error(err) end
-        return fn()
+        local ok2, ret = xpcall(fn, function(e)
+            local okt, tr = pcall(function() return debug.traceback(e,2) end)
+            reportError((okt and tr) or tostring(e))
+            return e
+        end)
+        if not ok2 then error(ret) end
+        return ret
     end)
     if ok and type(res) == "table" then
         return res
@@ -89,11 +95,13 @@ local function reportError(err)
 end
 
 local function safeCall(fn, ...)
-    local ok, err = pcall(fn, ...)
-    if not ok then
-        reportError(err)
+    local function handler(err)
+        local ok, trace = pcall(function() return debug.traceback(err, 2) end)
+        local txt = (ok and trace) or tostring(err)
+        reportError(txt)
+        return txt
     end
-    return ok, err
+    return xpcall(function() return fn(...) end, handler)
 end
 
 local function updateEspForPlayer(player)
